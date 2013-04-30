@@ -1,2 +1,1 @@
-nasm bootloader.s
-qemu bootloader
+nasm bootloader.s && qemu -fda bootloader -S -s

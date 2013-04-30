@@ -1,0 +1,15 @@
+# assemble
+nasm bootloader.s
+
+# disassemble
+objdump -D -b binary -mi386 bootloader -Maddr16,data16 bootloader
+
+# debugging with gdb
+1> qemu -fda bootloader -s -S  # -s wait for gdb, -S wait on first (BIOS) instruction
+2> gdb
+2> (gdb) target remote :1234
+2> (gdb) break *0x7c00   # break on first bootloader instruction
+2> (gdb) c  # <C-c> to break on current instruction
+
+# Reading from the disk
+http://en.wikipedia.org/wiki/INT_13H
