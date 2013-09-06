@@ -6,7 +6,7 @@ start:
     jmp hang
 
 print:
-	pusha
+    pusha
 print_loop:
     lodsb
     cmp al, 0
@@ -18,20 +18,20 @@ print_loop:
 
     jmp print_loop
 print_done:
-	popa
+    popa
     ret
 
 read_sector:
     mov ah, 2h      ; read sectors from drive
     mov al, 1       ; sectors to read count
     mov ch, 0       ; track
-    mov cl, 2		; sector (1-based)
-    mov dh, 0		; head
+    mov cl, 2       ; sector (1-based)
+    mov dh, 0       ; head
     mov dl, 0       ; drive (0 = floppy)
     mov bx, 0x9000  ; ES:BX dest
     int 13h
     jc error
-	mov eax, [0x9000]
+    mov eax, [0x9000]
     mov si, success_string
     call print
     ret
