@@ -1,18 +1,18 @@
 [map all labels.map]
 
-Stage2Area equ 0x9000
+Kernel equ 0x9000
 
 [ORG 0x7c00]
 start:
     mov si, msg
     call print
-    call read_sector
+    call load_kernel
     cli
     lgdt [GDT_toc]  ; Load the GDT.
     mov eax, cr0  ; Enter protected mode.
     or eax, 1
     mov cr0, eax
-    jmp 0x8:stage3
+    jmp 0x8:stage2
 
 print:
     pusha
@@ -30,18 +30,16 @@ print_done:
     popa
     ret
 
-read_sector:
+load_kernel:
     mov ah, 2h      ; read sectors from drive
     mov al, 1       ; sectors to read count
     mov ch, 0       ; track
     mov cl, 2       ; sector (1-based)
     mov dh, 0       ; head
     mov dl, 0       ; drive (0 = floppy)
-    mov bx, Stage2Area  ; ES:BX dest
-d:
+    mov bx, Kernel  ; ES:BX dest
     int 13h
     jc error
-    mov eax, [Stage2Area]
     mov si, success_string
     call print
     ret
@@ -89,20 +87,20 @@ GDT_toc:
   dd GDT_start
 
 bits 32
-stage3:
+stage2:
   mov ax, 0x10
   mov ds, ax
   mov ss, ax
   mov es, ax
-  sti
-  mov eax, [Stage2Area]
+  mov eax, 0x1234
+  ; sti
+  ; mov eax, [Kernel]
+before_kernel:
+  jmp Kernel
 
 stage3_hang:
   jmp 0x8:stage3_hang
 
 
-
 times 510-($-$$) db 0
 dw 0xAA55
-
-times 1024-($-$$) dw 0x1234
