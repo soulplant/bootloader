@@ -3,6 +3,7 @@ nasm bootloader.s
 
 # disassemble
 objdump -D -b binary -mi386 bootloader -Maddr16,data16 bootloader
+ndisasm bootloader
 
 # debugging with gdb
 1> qemu -fda bootloader -s -S  # -s wait for gdb, -S wait on first (BIOS) instruction
@@ -13,3 +14,6 @@ objdump -D -b binary -mi386 bootloader -Maddr16,data16 bootloader
 
 # Reading from the disk
 http://en.wikipedia.org/wiki/INT_13H
+
+# Map files - labels -> addresses
+[map all outfile.map]
