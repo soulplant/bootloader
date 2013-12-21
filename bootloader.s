@@ -8,11 +8,11 @@ start:
     call print
     call read_sector
     cli
-    lgdt [GDT_toc]
-    sti
-
-    jmp Stage2Area
-    jmp hang
+    lgdt [GDT_toc]  ; Load the GDT.
+    mov eax, cr0  ; Enter protected mode.
+    or eax, 1
+    mov cr0, eax
+    jmp 0x8:stage3
 
 print:
     pusha
@@ -38,15 +38,13 @@ read_sector:
     mov dh, 0       ; head
     mov dl, 0       ; drive (0 = floppy)
     mov bx, Stage2Area  ; ES:BX dest
+d:
     int 13h
     jc error
     mov eax, [Stage2Area]
     mov si, success_string
     call print
     ret
-
-hang:
-    jmp hang
 
 error:
     mov si, error_string
@@ -68,7 +66,7 @@ GDT_start:
   db 0x0        ; Base 16-23
   db 10011010b  ; See http://www.brokenthorn.com/Resources/OSDev8.html
   db 11001111b  ; As above.
-  dw 0x0        ; Base 24-31
+  db 0x0        ; Base 24-31
 
   ; data selector - as above but with the code/data bit set to 0
   dw 0xffff
@@ -76,37 +74,35 @@ GDT_start:
   db 0x0
   db 10010010b  ; bit 3 here is 0, not 1 as above
   db 11001111b
-  dw 0x0
+  db 0x0
+
+  ; null selector (reserved by processor)
+  dd 0
+  dd 0
+  ; null selector (reserved by processor)
+  dd 0
+  dd 0
 GDT_end:
 
 GDT_toc:
   dw GDT_end - GDT_start - 1    ; size of GDT - 1
   dd GDT_start
 
-
-times 510-($-$$) db 0
-dw 0xAA55
-
-stage2:
-  mov eax, 0x1234
-
-  cli
-  mov eax, cr0
-  or eax, 1
-  mov cr0, eax
-protected:
-  jmp 0x8:0x9018    ; this is stage3 atm, we have to code it explicitly because this file is ORG 0x7c00.
-
 bits 32
 stage3:
-  sti
   mov ax, 0x10
-  mov ds, ax  ; causes reboot
+  mov ds, ax
   mov ss, ax
   mov es, ax
-  ; sti
+  sti
+  mov eax, [Stage2Area]
 
 stage3_hang:
   jmp 0x8:stage3_hang
+
+
+
+times 510-($-$$) db 0
+dw 0xAA55
 
 times 1024-($-$$) dw 0x1234
