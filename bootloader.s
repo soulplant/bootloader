@@ -32,7 +32,7 @@ print_done:
 
 load_kernel:
     mov ah, 2h      ; read sectors from drive
-    mov al, 1       ; sectors to read count
+    mov al, 9       ; sectors to read count
     mov ch, 0       ; track
     mov cl, 2       ; sector (1-based)
     mov dh, 0       ; head

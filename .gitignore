@@ -1,2 +1,6 @@
 *.swp
 *.map
+*.o
+bootloader
+img
+kernel
