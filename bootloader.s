@@ -9,10 +9,10 @@ start:
     call load_kernel
     cli
     lgdt [GDT_toc]  ; Load the GDT.
-    mov eax, cr0  ; Enter protected mode.
+    mov eax, cr0    ; Enter protected mode.
     or eax, 1
     mov cr0, eax
-    jmp 0x8:stage2
+    jmp 0x8:stage2  ; Set CS to 0x8 and jump to stage2.
 
 print:
     pusha
