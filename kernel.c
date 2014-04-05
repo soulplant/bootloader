@@ -5,6 +5,7 @@
 char* hex = "0123456789abcdef";
 static struct idt_descriptor _idt[I86_MAX_INTERRUPTS] = {};
 static struct idtr _idtr;
+static char buf[512];
 
 extern void default_interrupt_handler();
 void install_idt();
@@ -12,6 +13,12 @@ extern void setup_pic();
 void on_interrupt();
 void on_keyboard_interrupt(int x);
 extern void keyboard_isr();
+
+void outb(uint32_t port, uint8_t value);
+uint8_t inb(uint32_t port);
+uint16_t inw(uint32_t port);
+void bl_wait(unsigned short base);
+void read_sectors_from_disk(int drive, int count, char* buf);
 
 int kmain() {
   install_idt();
@@ -28,7 +35,60 @@ int kmain() {
   asm("int $9");
   // asm("cli");
 
+  memset(buf, 0, 512);
+  read_sectors_from_disk(0, 1, buf);
+  print_line("after read: first two bytes");
+  print_int(2, buf[0], hex);
+  print_int(2, buf[1], hex);
+  print_line("done");
 	while (1);
+}
+
+#define asmv __asm__ __volatile__
+void outb(uint32_t port, uint8_t value) {
+  asmv("outb %%al, %%dx" :: "d" (port), "a" (value));
+}
+
+uint8_t inb(uint32_t port) {
+  uint8_t result;
+  asmv("inb %%dx, %%al" : "=a" (result) : "d" (port));
+  return result;
+}
+
+uint16_t inw(uint32_t port) {
+  uint16_t result;
+  asmv("inw %%dx, %%ax" : "=a" (result) : "d" (port));
+  return result;
+}
+
+void bl_wait(unsigned short base) {
+  while(inb(base+0x206) & 0x80);
+}
+
+void read_sectors_from_disk(int drive, int count, char* buf) {
+  int i;
+  int idx;
+  uint16_t tmpword;
+  uint8_t x;
+
+  bl_wait(0x1f0);
+  outb(0x1f1, 0x00);
+  outb(0x1f2, count);  // block count
+  outb(0x1f3, 0);  // block address
+  outb(0x1f4, 0);
+  outb(0x1f5, 0);
+  // 0xe0 for master, 0xf0 for slave. drive is the selector.
+  outb(0x1f6, 0xe0 | (drive << 4));
+
+  // 0x20 is the read sectors command.
+  outb(0x1f7, 0x20);
+  bl_wait(0x1f0);
+  while (!(inb(0x1f7) & 0x08));
+  for (idx = 0; idx < 256 * 1; idx++) {
+    tmpword = inw(0x1f0);
+    buf[idx * 2] = (unsigned char) tmpword;
+    buf[idx * 2 + 1] = (unsigned char) (tmpword >> 8);
+  }
 }
 
 void on_keyboard_interrupt(int scancode) {

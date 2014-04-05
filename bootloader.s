@@ -92,9 +92,6 @@ stage2:
   mov ds, ax
   mov ss, ax
   mov es, ax
-  mov eax, 0x1234
-  ; sti
-  ; mov eax, [Kernel]
 before_kernel:
   jmp Kernel
 
